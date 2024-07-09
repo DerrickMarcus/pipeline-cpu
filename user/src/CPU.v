@@ -1,20 +1,5 @@
 // ./src/CPU.v
 
-`include "InstructionMemory.v"
-`include "RegisterFile.v"
-`include "Control.v"
-`include "BranchJumpForwarding.v"
-`include "BranchResolve.v"
-`include "ALUControl.v"
-`include "ALU.v"
-`include "DataMemory.v"
-`include "ForwardingUnit.v"
-`include "HazardUnit.v"
-`include "IF_ID_Reg.v"
-`include "ID_EX_Reg.v"
-`include "EX_MEM_Reg.v"
-`include "MEM_WB_Reg.v"
-
 module CPU(
         input reset,
         input clk,
@@ -345,6 +330,12 @@ module CPU(
     wire [31:0] MEM_MemWriteData;
     assign MEM_MemWriteData = MEM_forward ? WB_MemReadData : MEM_RegRtData;
 
+
+    // assign Device_Read_Data = MEM_MemReadData;
+    assign MemRead = MEM_MemRead;
+    assign MemWrite = MEM_MemWrite;
+    assign MemBus_Address = MEM_ALUOut;
+    assign MemBus_Write_Data = MEM_MemWriteData;
     DataMemory u_DataMemory(
                    .reset(reset),
                    .clk(clk),
@@ -352,7 +343,9 @@ module CPU(
                    .MemWrite(MEM_MemWrite),
                    .Address(MEM_ALUOut),
                    .Write_data(MEM_MemWriteData),
-                   .Read_data(MEM_MemReadData)
+                   .Read_data(MEM_MemReadData),
+                   .Tube_display(Device_Read_Data[3:0]),
+                   .Tube_segment(Device_Read_Data[11:4])
                );
 
     // register MEM_WB

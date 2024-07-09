@@ -16,9 +16,15 @@ module RegisterFile(
     // here RF_data[0] is not defined because RF_data[0] identically equal to 0
     reg [31:0] RF_data[31:1];
 
-    // read data from RF_data as Read_data1 and Read_data2
-    assign Read_data1 = (Read_register1 == 5'b00000) ? 32'h00000000 : RF_data[Read_register1];
-    assign Read_data2 = (Read_register2 == 5'b00000) ? 32'h00000000 : RF_data[Read_register2];
+    // read data from RF_data as Read_data1 and Read_data2, RAW at the same time
+    assign Read_data1 =
+           (Read_register1 == 5'b00000) ? 32'h00000000 :
+           (RegWrite && Write_register != 0 && (Write_register == Read_register1)) ? Write_data :
+           RF_data[Read_register1];
+    assign Read_data2 =
+           (Read_register2 == 5'b00000) ? 32'h00000000 :
+           (RegWrite && Write_register != 0 && (Write_register == Read_register2)) ? Write_data :
+           RF_data[Read_register2];
 
     integer i;
     // write Wrtie_data to RF_data at clock posedge
