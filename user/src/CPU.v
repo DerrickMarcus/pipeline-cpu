@@ -3,11 +3,13 @@
 module CPU(
         input reset,
         input clk,
-        input [32-1:0] Device_Read_Data,
-        output MemRead,
-        output MemWrite,
-        output [32-1:0] MemBus_Address,
-        output [32-1:0] MemBus_Write_Data
+        // input [32-1:0] Device_Read_Data,
+        // output MemRead,
+        // output MemWrite,
+        // output [32-1:0] MemBus_Address,
+        // output [32-1:0] MemBus_Write_Data,
+        output [3:0] Tube_display,
+        output [7:0] Tube_segment
     );
 
     // all stage registers begin
@@ -332,10 +334,10 @@ module CPU(
 
 
     // assign Device_Read_Data = MEM_MemReadData;
-    assign MemRead = MEM_MemRead;
-    assign MemWrite = MEM_MemWrite;
-    assign MemBus_Address = MEM_ALUOut;
-    assign MemBus_Write_Data = MEM_MemWriteData;
+    // assign MemRead = MEM_MemRead;
+    // assign MemWrite = MEM_MemWrite;
+    // assign MemBus_Address = MEM_ALUOut;
+    // assign MemBus_Write_Data = MEM_MemWriteData;
     DataMemory u_DataMemory(
                    .reset(reset),
                    .clk(clk),
@@ -344,8 +346,8 @@ module CPU(
                    .Address(MEM_ALUOut),
                    .Write_data(MEM_MemWriteData),
                    .Read_data(MEM_MemReadData),
-                   .Tube_display(Device_Read_Data[3:0]),
-                   .Tube_segment(Device_Read_Data[11:4])
+                   .Tube_display(Tube_display),
+                   .Tube_segment(Tube_segment)
                );
 
     // register MEM_WB
