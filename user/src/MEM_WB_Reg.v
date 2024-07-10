@@ -2,8 +2,8 @@
 module MEM_WB_Reg(
         input reset,
         input clk,
-        input MEM_flush,
-        input MEM_stall,
+        // input MEM_flush,
+        // input MEM_stall,
         input [32-1:0] MEM_PC,
         input MEM_RegWrite,
         input MEM_MemRead,
@@ -22,7 +22,7 @@ module MEM_WB_Reg(
     );
 
     always @(posedge reset or posedge clk) begin
-        if(reset || MEM_flush) begin
+        if (reset) begin
             WB_PC <= 32'b0;
             WB_RegWrite <= 1'b0;
             WB_MemRead <= 1'b0;
@@ -31,7 +31,7 @@ module MEM_WB_Reg(
             WB_MemReadData <= 32'b0;
             WB_RegWrAddr <= 5'b0;
         end
-        else if(!MEM_stall) begin
+        else begin
             WB_PC <= MEM_PC;
             WB_RegWrite <= MEM_RegWrite;
             WB_MemRead <= MEM_MemRead;

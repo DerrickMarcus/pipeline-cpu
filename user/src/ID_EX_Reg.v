@@ -3,8 +3,7 @@
 module ID_EX_Reg(
         input reset,
         input clk,
-        input ID_flush,
-        input ID_stall,
+        input stall_IF_ID,
         input [32-1:0] ID_PC,
         input ID_RegWrite,
         input ID_MemRead,
@@ -37,7 +36,7 @@ module ID_EX_Reg(
     );
 
     always @(posedge reset or posedge clk) begin
-        if(reset || ID_flush) begin
+        if (reset || stall_IF_ID) begin
             EX_PC <= 32'b0;
             EX_RegWrite <= 1'b0;
             EX_MemRead <= 1'b0;
@@ -53,7 +52,7 @@ module ID_EX_Reg(
             EX_RegRt <= 5'b0;
             EX_RegWrAddr <= 5'b0;
         end
-        else if(!ID_stall) begin
+        else begin
             EX_PC <= ID_PC;
             EX_RegWrite <= ID_RegWrite;
             EX_MemRead <= ID_MemRead;

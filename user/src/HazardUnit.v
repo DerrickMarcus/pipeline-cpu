@@ -10,16 +10,16 @@ module HazardUnit(
         input MEM_MemRead,
         input [5-1:0] MEM_RegWrAddr,
 
-        output [5-1:0] flush,
-        output [5-1:0] stall
+        output flush_IF,
+        output stall_IF_ID
     );
 
     // flush has higher priority than stall
     // when to flush IF: jump hazard, branch hazard
-    assign flush = (ID_PCSrc == 2'b00 || (ID_PCSrc == 2'b01 && branch_taken == 0)) ? 5'b00000 : 5'b10000;
+    assign flush_IF = (ID_PCSrc == 2'b00 || (ID_PCSrc == 2'b01 && branch_taken == 0)) ? 0 : 1;
 
     // when to stall IF and ID: load-use hazard, data hazard caused by branch or jump
-    assign stall =
+    assign stall_IF_ID =
            (EX_MemRead && EX_RegWrAddr != 0 && (EX_RegWrAddr == ID_RegRs || EX_RegWrAddr == ID_RegRt)) // load-use
            ||
            (
@@ -40,6 +40,6 @@ module HazardUnit(
                    ||
                    (MEM_MemRead && MEM_RegWrAddr != 0 && MEM_RegWrAddr == ID_RegRs)
                )
-           ) ? 5'b11000 : 5'b00000;
+           ) ? 1 : 0;
 
 endmodule // HazardUnit

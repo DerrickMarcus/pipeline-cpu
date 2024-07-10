@@ -3,8 +3,8 @@
 module IF_ID_Reg(
         input reset,
         input clk,
-        input IF_flush,
-        input IF_stall,
+        input flush_IF,
+        input stall_IF_ID,
         input [32-1:0] IF_Instruction,
         input [32-1:0] IF_PC,
         output reg [32-1:0] ID_Instruction,
@@ -12,11 +12,19 @@ module IF_ID_Reg(
     );
 
     always @(posedge clk or posedge reset) begin
-        if (reset || IF_flush) begin
+        if (reset) begin
             ID_Instruction <= 32'b0;
             ID_PC <= 32'b0;
         end
-        else if (!IF_stall) begin
+        else if (flush_IF) begin
+            ID_Instruction <= 32'b0;
+            ID_PC <= 32'b0;
+        end
+        else if (stall_IF_ID) begin
+            ID_Instruction <= ID_Instruction;
+            ID_PC <= ID_PC;
+        end
+        else begin
             ID_Instruction <= IF_Instruction;
             ID_PC <= IF_PC;
         end

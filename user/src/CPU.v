@@ -8,13 +8,13 @@ module CPU(
         // output MemWrite,
         // output [32-1:0] MemBus_Address,
         // output [32-1:0] MemBus_Write_Data,
-        output [3:0] Tube_display,
-        output [7:0] Tube_segment
+        output [3:0] tube_select,
+        output [7:0] tube_segment
     );
 
     // all stage registers begin
-    wire [4:0] flush;
-    wire [4:0] stall;
+    wire flush_IF;
+    wire stall_IF_ID;
     // IF
     wire [31:0] IF_Instruction;
     reg [31:0] IF_PC;
@@ -88,6 +88,7 @@ module CPU(
 
     // calculate the next PC
     assign IF_PC_next =
+           stall_IF_ID ? IF_PC :
            (ID_PCSrc == 2'b01) ? BranchAddr :
            (ID_PCSrc == 2'b10) ? JumpAddr :
            (ID_PCSrc == 2'b11) ? RegisterAddr :
@@ -110,8 +111,8 @@ module CPU(
     IF_ID_Reg u_IF_ID_Reg(
                   .reset(reset),
                   .clk(clk),
-                  .IF_flush(flush[4]),
-                  .IF_stall(stall[4]),
+                  .flush_IF(flush_IF),
+                  .stall_IF_ID(stall_IF_ID),
                   .IF_Instruction(IF_Instruction),
                   .IF_PC(IF_PC),
                   .ID_Instruction(ID_Instruction),
@@ -203,11 +204,11 @@ module CPU(
                    .EX_RegWrAddr(EX_RegWrAddr),
                    .MEM_MemRead(MEM_MemRead),
                    .MEM_RegWrAddr(MEM_RegWrAddr),
-                   .flush(flush),
-                   .stall(stall)
+                   .flush_IF(flush_IF),
+                   .stall_IF_ID(stall_IF_ID)
                );
 
-    assign BranchAddr = ID_PC + 32'h0000_0004 + (branch_taken ? {ID_ExtImm[29:0], 2'b00} : 32'h0000_0000);
+    assign BranchAddr = ID_PC + 32'h0000_0004 + (branch_taken ? {ID_ExtImm[29:0], 2'b00} : 32'h0000_0004);
     assign JumpAddr = {ID_PC[31:28], ID_Instruction[25:0], 2'b00};
     assign RegisterAddr = branch_in1;
 
@@ -215,8 +216,7 @@ module CPU(
     ID_EX_Reg u_ID_EX_Reg(
                   .reset(reset),
                   .clk(clk),
-                  .ID_flush(flush[3]),
-                  .ID_stall(stall[3]),
+                  .stall_IF_ID(stall_IF_ID),
                   .ID_PC(ID_PC),
                   .ID_RegWrite(ID_RegWrite),
                   .ID_MemRead(ID_MemRead),
@@ -306,8 +306,6 @@ module CPU(
     EX_MEM_Reg u_EX_MEM_Reg(
                    .reset(reset),
                    .clk(clk),
-                   .EX_flush(flush[2]),
-                   .EX_stall(stall[2]),
                    .EX_PC(EX_PC),
                    .EX_RegWrite(EX_RegWrite),
                    .EX_MemRead(EX_MemRead),
@@ -346,16 +344,14 @@ module CPU(
                    .Address(MEM_ALUOut),
                    .Write_data(MEM_MemWriteData),
                    .Read_data(MEM_MemReadData),
-                   .Tube_display(Tube_display),
-                   .Tube_segment(Tube_segment)
+                   .tube_select(tube_select),
+                   .tube_segment(tube_segment)
                );
 
     // register MEM_WB
     MEM_WB_Reg u_MEM_WB_Reg(
                    .reset(reset),
                    .clk(clk),
-                   .MEM_flush(flush[1]),
-                   .MEM_stall(stall[1]),
                    .MEM_PC(MEM_PC),
                    .MEM_RegWrite(MEM_RegWrite),
                    .MEM_MemRead(MEM_MemRead),

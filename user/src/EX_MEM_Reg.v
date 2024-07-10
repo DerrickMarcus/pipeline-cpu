@@ -3,8 +3,8 @@
 module EX_MEM_Reg(
         input reset,
         input clk,
-        input EX_flush,
-        input EX_stall,
+        // input EX_flush,
+        // input EX_stall,
         input [32-1:0] EX_PC,
         input EX_RegWrite,
         input EX_MemRead,
@@ -27,7 +27,7 @@ module EX_MEM_Reg(
     );
 
     always @(posedge reset or posedge clk) begin
-        if(reset || EX_flush) begin
+        if (reset) begin
             MEM_PC <= 32'b0;
             MEM_RegWrite <= 1'b0;
             MEM_MemRead <= 1'b0;
@@ -38,7 +38,7 @@ module EX_MEM_Reg(
             MEM_RegRt <= 5'b0;
             MEM_RegWrAddr <= 5'b0;
         end
-        else if(!EX_stall) begin
+        else begin
             MEM_PC <= EX_PC;
             MEM_RegWrite <= EX_RegWrite;
             MEM_MemRead <= EX_MemRead;
