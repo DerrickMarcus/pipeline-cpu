@@ -80,7 +80,7 @@ module CPU(
     wire [31:0] IF_PC_plus_4;
     wire [31:0] IF_PC_next;
 
-    assign IF_PC_plus_4 = IF_PC + 32'h00000004;
+    assign IF_PC_plus_4 = IF_PC + 32'h0000_0004;
 
     wire [31:0] BranchAddr;
     wire [31:0] JumpAddr;
@@ -96,7 +96,7 @@ module CPU(
     // update PC
     always @(posedge reset or posedge clk)
         if (reset)
-            IF_PC <= 32'h00000000;
+            IF_PC <= 32'h0000_0000;
         else
             IF_PC <= IF_PC_next;
 
@@ -145,7 +145,7 @@ module CPU(
            (ID_RegDst == 2'b01) ? ID_Instruction[15:11] : 5'b11111;
     assign WB_RegWriteData =
            (WB_MemtoReg == 2'b01) ?  WB_MemReadData :
-           (WB_MemtoReg == 2'b10) ? (WB_PC + 32'h00000004) : WB_ALUOut;
+           (WB_MemtoReg == 2'b10) ? (WB_PC + 32'h0000_0004) : WB_ALUOut;
 
     RegisterFile u_RegisterFile(
                      .reset(reset),
@@ -207,7 +207,7 @@ module CPU(
                    .stall(stall)
                );
 
-    assign BranchAddr = ID_PC + 32'h00000004 + (branch_taken ? {ID_ExtImm[29:0], 2'b00} : 32'h00000000);
+    assign BranchAddr = ID_PC + 32'h0000_0004 + (branch_taken ? {ID_ExtImm[29:0], 2'b00} : 32'h0000_0000);
     assign JumpAddr = {ID_PC[31:28], ID_Instruction[25:0], 2'b00};
     assign RegisterAddr = branch_in1;
 

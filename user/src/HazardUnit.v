@@ -20,7 +20,7 @@ module HazardUnit(
 
     // when to stall IF and ID: load-use hazard, data hazard caused by branch or jump
     assign stall =
-           (EX_MemRead && EX_RegWrAddr != 0 && (EX_RegWrAddr == ID_RegRs || EX_RegWrAddr == ID_RegRt))
+           (EX_MemRead && EX_RegWrAddr != 0 && (EX_RegWrAddr == ID_RegRs || EX_RegWrAddr == ID_RegRt)) // load-use
            ||
            (
                ID_PCSrc == 2'b01 // branch

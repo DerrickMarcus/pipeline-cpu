@@ -32,7 +32,7 @@ module ALU(
         5'b00110:
             out <= in1 - in2; // sub
         5'b00111:
-            out <= {31'h00000000, Sign ? lt_signed: (in1 < in2)}; // slt
+            out <= {31'h0000_0000, Sign ? lt_signed: (in1 < in2)}; // slt
         5'b01100:
             out <= ~(in1 | in2); // nor
         5'b01101:
@@ -46,7 +46,7 @@ module ALU(
         5'b11010:
             out <= in1 * in2; // mul
         default:
-            out <= 32'h00000000;
+            out <= 32'h0000_0000;
     endcase
 
 endmodule // ALU

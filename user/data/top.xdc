@@ -1,13 +1,10 @@
 # ./data/top.xdc
 
-create_clock -name clk -period 1000.000 [get_ports clk]
 
-# create_clock -period 10.000 -name CLK -waveform {0.000 5.000} [get_ports sysclk]
+create_clock -period 10.000 -name CLK -waveform {0.000 5.000} [get_ports clk]
 
-# set_property -dict {PACKAGE_PIN R4 IOSTANDARD LVCMOS33} [get_ports sysclk]
-# set_property -dict {PACKAGE_PIN V2 IOSTANDARD LVCMOS33} [get_ports LED]
+set_property -dict {PACKAGE_PIN R4 IOSTANDARD LVCMOS33} [get_ports clk]
 set_property -dict {PACKAGE_PIN B22 IOSTANDARD LVCMOS33} [get_ports reset]
-# set_property -dict {PACKAGE_PIN B21 IOSTANDARD LVCMOS33} [get_ports KEY2]
 
 set_property -dict {PACKAGE_PIN N2 IOSTANDARD LVCMOS33} [get_ports {LED_SEG[0]}]
 set_property -dict {PACKAGE_PIN P5 IOSTANDARD LVCMOS33} [get_ports {LED_SEG[1]}]

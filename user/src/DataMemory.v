@@ -8,8 +8,8 @@ module DataMemory(
         input [32-1:0] Address,
         input [32-1:0] Write_data,
         output [32-1:0] Read_data,
-        output reg [4-1:0] Tube_display, // select which tube to display
-        output reg [8-1:0] Tube_segment // 8-segment digital tube
+        output reg [4-1:0] tube_select, // select which tube to display
+        output reg [8-1:0] tube_segment // 8-segment digital tube
         // output [8-1:0] UART_TXD,
         // output [8-1:0] UART_RXD,
         // output [9-1:0] UART_CON
@@ -24,11 +24,11 @@ module DataMemory(
 
     // read data from RAM_data as Read_data
     // assign Read_data = MemRead ? RAM_data[Address[RAM_SIZE_BIT + 1 : 2]] : 32'h00000000;
-    assign Read_data = (MemRead == 0) ? 32'h00000000 :
-           (Address == 32'h40000010) ? {20'h0, Tube_display, Tube_segment} :
-           //    (Address == 32'h40000018) ? {24'h0, UART_TXD} :
-           //    (Address == 32'h4000001C) ? {24'h0, UART_RXD} :
-           //    (Address == 32'h40000020) ? {23'h0, UART_CON} :
+    assign Read_data = (MemRead == 0) ? 32'h0000_0000 :
+           (Address == 32'h4000_0010) ? {20'h0, tube_select, tube_segment} :
+           //    (Address == 32'h4000_0018) ? {24'h0, UART_TXD} :
+           //    (Address == 32'h4000_001C) ? {24'h0, UART_RXD} :
+           //    (Address == 32'h4000_0020) ? {23'h0, UART_CON} :
            RAM_data[Address[RAM_SIZE_BIT + 1 : 2]];
 
     // write Write_data to RAM_data at clock posedge
@@ -36,8 +36,8 @@ module DataMemory(
     always @(posedge reset or posedge clk) begin
         if (reset) begin
             // -------- Set Data Memory Configuration Below
-            Tube_display <= 4'h0;
-            Tube_segment <= 8'h00;
+            tube_select <= 4'h0;
+            tube_segment <= 8'h0;
             RAM_data[0] <= 32'h00000014;
             RAM_data[1] <= 32'h000041a8;
             RAM_data[2] <= 32'h00003af2;
@@ -66,20 +66,20 @@ module DataMemory(
         end
 
         else if (MemWrite) begin
-            if (Address == 32'h40000010) begin
-                Tube_display <= Write_data[11:8];
-                Tube_segment <= Write_data[7:0];
+            if (Address == 32'h4000_0010) begin
+                tube_select <= Write_data[11:8];
+                tube_segment <= Write_data[7:0];
             end
-            // else if (Address == 32'h40000018) begin
+            // else if (Address == 32'h4000_0018) begin
             //     UART_TXD <= Write_data[7:0];
             // end
-            // else if (Address == 32'h4000001C) begin
+            // else if (Address == 32'h4000_001C) begin
             //     UART_RXD <= Write_data[7:0];
             // end
-            // else if (Address == 32'h40000020) begin
+            // else if (Address == 32'h4000_0020) begin
             //     UART_CON <= Write_data[7:0];
             // end
-            else if (Address < 32'h40000000) begin
+            else if (Address < 32'h4000_0000) begin
                 RAM_data[Address[RAM_SIZE_BIT + 1 : 2]] <= Write_data;
             end
         end
