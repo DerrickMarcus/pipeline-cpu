@@ -38,47 +38,48 @@ module DataMemory(
             // -------- Set Data Memory Configuration Below
             tube_select <= 4'h0;
             tube_segment <= 8'h0;
-            RAM_data[0] <= 32'hffffffd3; // X0 = -45
-            RAM_data[1] <= 32'h00000003; // Y0 = 3
+            // RAM_data[0] <= 32'hffffffd3; // X0 = -45
+            // RAM_data[1] <= 32'h00000003; // Y0 = 3
 
-            RAM_data[2] <= 32'h00000028; // X1 = 40
-            RAM_data[3] <= 32'h00000024; // Y1 = 36
-
-
-            RAM_data[4] <= 32'hfffffffe; // X2 = -2
-            RAM_data[5] <= 32'h00000006; // Y2 = 6
-
-            RAM_data[6] <= 32'hfffffff9; // X3 = -7
-            RAM_data[7] <= 32'h0000003a; // Y3 = 58
-
-            for (i = 8; i < RAM_SIZE; i = i + 1)
-                RAM_data[i] <= 32'h00000000;
+            // RAM_data[2] <= 32'h00000028; // X1 = 40
+            // RAM_data[3] <= 32'h00000024; // Y1 = 36
 
 
-            // RAM_data[0] <= 32'h00000014;
-            // RAM_data[1] <= 32'h000041a8;
-            // RAM_data[2] <= 32'h00003af2;
-            // RAM_data[3] <= 32'h0000acda;
-            // RAM_data[4] <= 32'h00000c2b;
-            // RAM_data[5] <= 32'h0000b783;
-            // RAM_data[6] <= 32'h0000dac9;
-            // RAM_data[7] <= 32'h00008ed9;
-            // RAM_data[8] <= 32'h000009ff;
-            // RAM_data[9] <= 32'h00002f44;
-            // RAM_data[10] <= 32'h0000044e;
-            // RAM_data[11] <= 32'h00009899;
-            // RAM_data[12] <= 32'h00003c56;
-            // RAM_data[13] <= 32'h0000128d;
-            // RAM_data[14] <= 32'h0000dbe3;
-            // RAM_data[15] <= 32'h0000d4b4;
-            // RAM_data[16] <= 32'h00003748;
-            // RAM_data[17] <= 32'h00003918;
-            // RAM_data[18] <= 32'h00004112;
-            // RAM_data[19] <= 32'h0000c399;
-            // RAM_data[20] <= 32'h00004955;
-            // for (i = 21; i < RAM_SIZE; i = i + 1) begin
+            // RAM_data[4] <= 32'hfffffffe; // X2 = -2
+            // RAM_data[5] <= 32'h00000006; // Y2 = 6
+
+            // RAM_data[6] <= 32'hfffffff9; // X3 = -7
+            // RAM_data[7] <= 32'h0000003a; // Y3 = 58
+
+            // for (i = 8; i < RAM_SIZE; i = i + 1)
             //     RAM_data[i] <= 32'h00000000;
-            // end
+
+
+            RAM_data[0] <= 32'h00000014; // 20
+            RAM_data[1] <= 32'h000041a8; // 16808
+            RAM_data[2] <= 32'h00003af2; // 15090
+            RAM_data[3] <= 32'h0000acda; // 44250
+            RAM_data[4] <= 32'h00000c2b; // 3115
+            RAM_data[5] <= 32'h0000b783; // 46979
+            RAM_data[6] <= 32'h0000dac9; // 56009
+            RAM_data[7] <= 32'h00008ed9; // 36569
+            RAM_data[8] <= 32'h000009ff; // 2559
+            RAM_data[9] <= 32'h00002f44; // 12100
+            RAM_data[10] <= 32'h0000044e; // 1102
+            RAM_data[11] <= 32'h00009899; // 39065
+            RAM_data[12] <= 32'h00003c56; // 15446
+            RAM_data[13] <= 32'h0000128d; // 4749
+            RAM_data[14] <= 32'h0000dbe3; // 56291
+            RAM_data[15] <= 32'h0000d4b4; // 54452
+            RAM_data[16] <= 32'h00003748; // 14152
+            RAM_data[17] <= 32'h00003918; // 14616
+            RAM_data[18] <= 32'h00004112; // 16658
+            RAM_data[19] <= 32'h0000c399; // 50073
+            RAM_data[20] <= 32'h00004955; // 18773
+            for (i = 21; i < RAM_SIZE; i = i + 1) begin
+                RAM_data[i] <= 32'h00000000;
+            end
+
             // -------- Set Data Memory Configuration Above
         end
 

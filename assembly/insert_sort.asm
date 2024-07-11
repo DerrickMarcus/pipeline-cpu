@@ -29,7 +29,7 @@ main:
     jal insertion_sort_ready # 调用insertion_sort
 
 
-exit:
+end:
     la $t0, buffer # buffer地址加载到t0
     lw $t1, 0($t0) # 使用t1临时保存N
     sw $s0, 0($t0) # buffer[0]=compare_count

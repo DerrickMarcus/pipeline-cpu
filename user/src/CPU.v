@@ -122,10 +122,13 @@ module CPU(
     // ID stage and WB stage
 
     // decode to generate control signals
+    wire [2:0] ID_BranchType;
     Control u_Control(
                 .OpCode(ID_Instruction[31:26]),
                 .Funct(ID_Instruction[5:0]),
+                .Inst_Rt(ID_Instruction[20:16]),
                 .PCSrc(ID_PCSrc),
+                .BranchType(ID_BranchType),
                 .RegWrite(ID_RegWrite),
                 .RegDst(ID_RegDst),
                 .MemRead(ID_MemRead),
@@ -143,7 +146,7 @@ module CPU(
     assign ID_RegRt = ID_Instruction[20:16];
     assign ID_RegWrAddr =
            (ID_RegDst == 2'b00) ? ID_Instruction[20:16] :
-           (ID_RegDst == 2'b01) ? ID_Instruction[15:11] : 5'b11111;
+           (ID_RegDst == 2'b10) ? 5'b11111 : ID_Instruction[15:11];
     assign WB_RegWriteData =
            (WB_MemtoReg == 2'b01) ?  WB_MemReadData :
            (WB_MemtoReg == 2'b10) ? (WB_PC + 32'h0000_0004) : WB_ALUOut;
@@ -186,8 +189,7 @@ module CPU(
     wire branch_taken;
 
     BranchResolve u_BranchResolve(
-                      .OpCode_RegImm(ID_Instruction[31:26]),
-                      .Inst_Rt(ID_Instruction[20:16]),
+                      .BranchType(ID_BranchType),
                       .in1(branch_in1),
                       .in2(branch_in2),
                       .branch_taken(branch_taken)
