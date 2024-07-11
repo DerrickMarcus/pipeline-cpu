@@ -16,17 +16,19 @@ module IF_ID_Reg(
             ID_Instruction <= 32'b0;
             ID_PC <= 32'b0;
         end
-        else if (flush_IF) begin
-            ID_Instruction <= 32'b0;
-            ID_PC <= 32'b0;
-        end
-        else if (stall_IF_ID) begin
-            ID_Instruction <= ID_Instruction;
-            ID_PC <= ID_PC;
-        end
         else begin
-            ID_Instruction <= IF_Instruction;
-            ID_PC <= IF_PC;
+            if (flush_IF && !stall_IF_ID) begin
+                ID_Instruction <= 32'b0;
+                ID_PC <= 32'b0;
+            end
+            else if (stall_IF_ID) begin
+                ID_Instruction <= ID_Instruction;
+                ID_PC <= ID_PC;
+            end
+            else begin
+                ID_Instruction <= IF_Instruction;
+                ID_PC <= IF_PC;
+            end
         end
     end
 

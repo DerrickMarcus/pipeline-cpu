@@ -3,6 +3,7 @@ module HazardUnit(
         input [5-1:0] ID_RegRs,
         input [5-1:0] ID_RegRt,
         input [1:0] ID_PCSrc,
+        input ID_MemWrite,
         input branch_taken,
         input EX_MemRead,
         input EX_RegWrite,
@@ -20,10 +21,12 @@ module HazardUnit(
 
     // when to stall IF and ID: load-use hazard, data hazard caused by branch or jump
     assign stall_IF_ID =
-           (EX_MemRead && EX_RegWrAddr != 0 && (EX_RegWrAddr == ID_RegRs || EX_RegWrAddr == ID_RegRt)) // load-use
+           (!ID_MemWrite && EX_MemRead && EX_RegWrAddr != 0 && (EX_RegWrAddr == ID_RegRs || EX_RegWrAddr == ID_RegRt)) // load-use, except load-store
+           ||
+           (ID_MemWrite && EX_MemRead && EX_RegWrAddr != 0 && EX_RegWrAddr == ID_RegRs) // sw use the reg that lw writes in for calculating the address
            ||
            (
-               ID_PCSrc == 2'b01 // branch
+               ID_PCSrc == 2'b01 // data hazard caused by branch
                &&
                (
                    (EX_RegWrite && EX_RegWrAddr != 0 && (EX_RegWrAddr == ID_RegRs || EX_RegWrAddr == ID_RegRt))
@@ -33,7 +36,7 @@ module HazardUnit(
            )
            ||
            (
-               ID_PCSrc == 2'b11 // jr, jalr
+               ID_PCSrc == 2'b11 // data hazad caused by jr or jalr
                &&
                (
                    (EX_RegWrite && EX_RegWrAddr != 0 && EX_RegWrAddr == ID_RegRs)

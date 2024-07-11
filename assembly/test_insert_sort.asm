@@ -4,6 +4,7 @@
 # test_insert_sort.asm
 
 main:
+    li $sp, 256
     li $a0, 0 # buffer地址加载到a0
     lw $a1, 0($a0) # insertion_sort参数a1=N=buffer[0]，排序元素个数
     addi $a0, $a0, 4 # insertion_sort参数a0=buffer[1]的地址，即v[0]的地址

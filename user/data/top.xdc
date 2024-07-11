@@ -1,6 +1,6 @@
 # ./data/top.xdc
 
-create_clock -name clk -period 1000.000 [get_ports clk]
+create_clock -name clk -period 20.000 [get_ports clk]
 
 # create_clock -period 10.000 -name CLK -waveform {0.000 5.000} [get_ports clk]
 

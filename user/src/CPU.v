@@ -200,6 +200,7 @@ module CPU(
                    .ID_RegRs(ID_RegRs),
                    .ID_RegRt(ID_RegRt),
                    .ID_PCSrc(ID_PCSrc),
+                   .ID_MemWrite(ID_MemWrite),
                    .branch_taken(branch_taken),
                    .EX_MemRead(EX_MemRead),
                    .EX_RegWrite(EX_RegWrite),
