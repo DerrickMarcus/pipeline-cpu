@@ -1,6 +1,6 @@
 // ./src/Control.v
 
-module Control(
+module Control (
         input [6-1:0] OpCode,
         input [6-1:0] Funct,
         input [5-1:0] Inst_Rt,
@@ -71,15 +71,14 @@ module Control(
     assign LuOp = (OpCode == 6'h0f) ? 1 : 0;
 
     // set ALUOp
-    assign ALUOp[2:0] =
-           (OpCode == 6'h00) ? 3'b010 : // R type
+    assign ALUOp[2:0] = (OpCode == 6'h00) ? 3'b010 :  // R type
            //     (OpCode == 6'h04) ? 3'b001 : // beq
-           (OpCode == 6'h0c) ? 3'b100 : // andi
-           (OpCode == 6'h0d) ? 3'b011 : // ori
-           (OpCode == 6'h0a || OpCode == 6'h0b) ? 3'b101 : // slti,sltiu
-           (OpCode == 6'h1c && Funct == 6'h02) ? 3'b110 : // mul
-           3'b000; // lw,sw,lui,addi,addiu
+           (OpCode == 6'h0c) ? 3'b100 :  // andi
+           (OpCode == 6'h0d) ? 3'b011 :  // ori
+           (OpCode == 6'h0a || OpCode == 6'h0b) ? 3'b101 :  // slti,sltiu
+           (OpCode == 6'h1c && Funct == 6'h02) ? 3'b110 :  // mul
+           3'b000;  // lw,sw,lui,addi,addiu
 
     assign ALUOp[3] = OpCode[0];
 
-endmodule // Control
+endmodule  // Control

@@ -1,6 +1,23 @@
 // ./src/CPU.v
 
-module CPU(
+`include"ALU.v"
+`include"ALUControl.v"
+`include"BranchJumpForwarding.v"
+`include"BranchResolve.v"
+`include"Control.v"
+`include"DataMemory.v"
+`include"EX_MEM_Reg.v"
+`include"ForwardingUnit.v"
+`include"GenerateCLK.v"
+`include"HazardUnit.v"
+`include"ID_EX_Reg.v"
+`include"IF_ID_Reg.v"
+`include"InstructionMemory.v"
+`include"MEM_WB_Reg.v"
+`include"PC.v"
+`include"RegisterFile.v"
+
+module CPU (
         input reset,
         input clk,
         // input [32-1:0] Device_Read_Data,
@@ -11,6 +28,13 @@ module CPU(
         output [3:0] tube_select,
         output [7:0] tube_segment
     );
+
+    // wire clk;
+    // GenerateCLK u_GenerateCLK(
+    //                 .sysclk(sysclk),
+    //                 .reset(reset),
+    //                 .clk(clk)
+    //             );
 
     // all stage registers begin
     wire flush_IF;
@@ -81,7 +105,7 @@ module CPU(
     wire [31:0] JumpAddr;
     wire [31:0] RegisterAddr;
 
-    PC u_PC(
+    PC u_PC (
            .reset(reset),
            .clk(clk),
            .stall_IF_ID(stall_IF_ID),
@@ -93,13 +117,13 @@ module CPU(
        );
 
     // Instruction Memory
-    InstructionMemory u_InstructionMemory(
+    InstructionMemory u_InstructionMemory (
                           .Address(IF_PC),
                           .Instruction(IF_Instruction)
                       );
 
     // register IF_ID
-    IF_ID_Reg u_IF_ID_Reg(
+    IF_ID_Reg u_IF_ID_Reg (
                   .reset(reset),
                   .clk(clk),
                   .flush_IF(flush_IF),
@@ -114,7 +138,7 @@ module CPU(
 
     // decode to generate control signals
     wire [2:0] ID_BranchType;
-    Control u_Control(
+    Control u_Control (
                 .OpCode(ID_Instruction[31:26]),
                 .Funct(ID_Instruction[5:0]),
                 .Inst_Rt(ID_Instruction[20:16]),
@@ -142,7 +166,7 @@ module CPU(
            (WB_MemtoReg == 2'b01) ?  WB_MemReadData :
            (WB_MemtoReg == 2'b10) ? (WB_PC + 32'h4) : WB_ALUOut;
 
-    RegisterFile u_RegisterFile(
+    RegisterFile u_RegisterFile (
                      .reset(reset),
                      .clk(clk),
                      .RegWrite(WB_RegWrite),
@@ -163,7 +187,7 @@ module CPU(
     wire branch_jump_forward1;
     wire branch_jump_forward2;
 
-    BranchJumpForwarding u_BranchJumpForwarding(
+    BranchJumpForwarding u_BranchJumpForwarding (
                              .MEM_RegWrite(MEM_RegWrite),
                              .MEM_RegWrAddr(MEM_RegWrAddr),
                              .ID_RegRs(ID_RegRs),
@@ -179,7 +203,7 @@ module CPU(
     assign branch_in2 = branch_jump_forward2 ? MEM_ALUOut : ID_RegReadDataB;
     wire branch_taken;
 
-    BranchResolve u_BranchResolve(
+    BranchResolve u_BranchResolve (
                       .BranchType(ID_BranchType),
                       .in1(branch_in1),
                       .in2(branch_in2),
@@ -187,7 +211,7 @@ module CPU(
                   );
 
     // solve control hazard
-    HazardUnit u_HazardUnit(
+    HazardUnit u_HazardUnit (
                    .ID_RegRs(ID_RegRs),
                    .ID_RegRt(ID_RegRt),
                    .ID_PCSrc(ID_PCSrc),
@@ -207,7 +231,7 @@ module CPU(
     assign RegisterAddr = branch_in1;
 
     // register ID_EX
-    ID_EX_Reg u_ID_EX_Reg(
+    ID_EX_Reg u_ID_EX_Reg (
                   .reset(reset),
                   .clk(clk),
                   .stall_IF_ID(stall_IF_ID),
@@ -244,7 +268,7 @@ module CPU(
     // EX stage
     wire [4:0] EX_ALUCtl;
     wire EX_Sign;
-    ALUControl u_ALUControl(
+    ALUControl u_ALUControl (
                    .ALUOp(EX_ALUOp),
                    .Funct(EX_ExtImm[5:0]),
                    .ALUCtl(EX_ALUCtl),
@@ -256,7 +280,7 @@ module CPU(
     wire [1:0] ALU_forwardB;
     wire MEM_forward;
 
-    ForwardingUnit u_ForwardingUnit(
+    ForwardingUnit u_ForwardingUnit (
                        .EX_RegRs(EX_RegRs),
                        .EX_RegRt(EX_RegRt),
                        .MEM_RegWrite(MEM_RegWrite),
@@ -288,7 +312,7 @@ module CPU(
     assign ALU_in1 = EX_ALUSrc1 ? {27'h0, EX_ExtImm[10:6]} : EX_RegRsData; // EX_shamt = EX_ExtImm[10:6]
     assign ALU_in2 = EX_ALUSrc2 ? EX_ExtImm : EX_RegRtData;
 
-    ALU u_ALU(
+    ALU u_ALU (
             .in1(ALU_in1),
             .in2(ALU_in2),
             .ALUCtl(EX_ALUCtl),
@@ -297,7 +321,7 @@ module CPU(
         );
 
     // register EX_MEM
-    EX_MEM_Reg u_EX_MEM_Reg(
+    EX_MEM_Reg u_EX_MEM_Reg (
                    .reset(reset),
                    .clk(clk),
                    .EX_PC(EX_PC),
@@ -330,7 +354,7 @@ module CPU(
     // assign MemWrite = MEM_MemWrite;
     // assign MemBus_Address = MEM_ALUOut;
     // assign MemBus_Write_Data = MEM_MemWriteData;
-    DataMemory u_DataMemory(
+    DataMemory u_DataMemory (
                    .reset(reset),
                    .clk(clk),
                    .MemRead(MEM_MemRead),
@@ -343,7 +367,7 @@ module CPU(
                );
 
     // register MEM_WB
-    MEM_WB_Reg u_MEM_WB_Reg(
+    MEM_WB_Reg u_MEM_WB_Reg (
                    .reset(reset),
                    .clk(clk),
                    .MEM_PC(MEM_PC),
@@ -365,4 +389,4 @@ module CPU(
     // WB stage
     // already finished in u_RegisterFile
 
-endmodule // CPU
+endmodule  // CPU

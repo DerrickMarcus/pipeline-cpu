@@ -1,6 +1,6 @@
 // ./src/PC.v
 
-module PC(
+module PC (
         input reset,
         input clk,
         input stall_IF_ID,
@@ -21,8 +21,7 @@ module PC(
                 IF_PC <=
                       (ID_PCSrc == 2'b01) ? BranchAddr :
                       (ID_PCSrc == 2'b10) ? JumpAddr :
-                      (ID_PCSrc == 2'b11) ? RegisterAddr :
-                      IF_PC + 32'h4;
+                      (ID_PCSrc == 2'b11) ? RegisterAddr : IF_PC + 32'h4;
         end
 
 endmodule

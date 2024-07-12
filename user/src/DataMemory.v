@@ -38,22 +38,6 @@ module DataMemory(
             // -------- Set Data Memory Configuration Below
             tube_select <= 4'h0;
             tube_segment <= 8'h0;
-            // RAM_data[0] <= 32'hffffffd3; // X0 = -45
-            // RAM_data[1] <= 32'h00000003; // Y0 = 3
-
-            // RAM_data[2] <= 32'h00000028; // X1 = 40
-            // RAM_data[3] <= 32'h00000024; // Y1 = 36
-
-
-            // RAM_data[4] <= 32'hfffffffe; // X2 = -2
-            // RAM_data[5] <= 32'h00000006; // Y2 = 6
-
-            // RAM_data[6] <= 32'hfffffff9; // X3 = -7
-            // RAM_data[7] <= 32'h0000003a; // Y3 = 58
-
-            // for (i = 8; i < RAM_SIZE; i = i + 1)
-            //     RAM_data[i] <= 32'h00000000;
-
 
             RAM_data[0] <= 32'h00000014; // 20
             RAM_data[1] <= 32'h000041a8; // 16808

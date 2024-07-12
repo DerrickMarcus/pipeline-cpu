@@ -30,6 +30,6 @@ module testbench();
         #100 reset = 0;
     end
 
-    always #50 clk = ~clk;
+    always #50 clk = ~clk; // T=100ns, f=10MHz
 
 endmodule
