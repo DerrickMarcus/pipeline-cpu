@@ -9,6 +9,8 @@ footer: ${pageNo} of ${totalPages}
 >
 > 学号：2022010597  班级：无24
 
+目录：
+
 [TOC]
 
 
@@ -17,7 +19,9 @@ footer: ${pageNo} of ${totalPages}
 
 将理论课处理器大作业中设计的单周期 MIPS 处理器改进为流水线结构，并利用此处理器完成排序算法，本实验选择的算法为直接插入排序。
 
-MIPS 汇编代码源文件 `insert_sort.asm` 。
+理论课大作业中提交的可直接运行的汇编代码 `insert_sort.asm` ，将其改为用于可执行流水线与 WELOG 开发板的代码 `test.asm` 。
+
+
 
 
 
@@ -37,6 +41,10 @@ d) 对于 J 类指令在 ID 阶段判断，并取消 IF 阶段指令。
 
 数据存储的地址空间被划分为 2 部分：0x00000000～0x3FFFFFFF（字节地址）为数据 RAM，可以提供数据存储功能；0x40000000～0x7FFFFFFF（字节地址）为外设地址空间，对其地址的读写对应到相应的外设资源。除说明外，外设地址和描述不得更改或额外添加。
 
+![memory_space](.\memory_space.png)
+
+
+
 
 
 ## 三、实验设计
@@ -53,7 +61,7 @@ d) 对于 J 类指令在 ID 阶段判断，并取消 IF 阶段指令。
 
 
 
-### 支持的指令集 Instruction Set
+### 支持的指令集
 
 本实验所设计的处理器支持的是 MIPS32 指令集的一个子集：
 
@@ -89,7 +97,7 @@ d) 对于 J 类指令在 ID 阶段判断，并取消 IF 阶段指令。
 
 
 
-### 控制信号 Control Signals
+### 控制信号
 
 在 ID 阶段根据下面两个指令字段译码：
 
@@ -123,7 +131,7 @@ d) 对于 J 类指令在 ID 阶段判断，并取消 IF 阶段指令。
 
 
 
-### 级间寄存器 Inter-stage Register
+### 级间寄存器
 
 级间寄存器中存储各类控制信号和数据，并随着流水线向前移动。5级流水线有4个级间寄存器： `IF_ID, ID_EX, EX_MEM, MEM_WB` 。
 
@@ -174,7 +182,7 @@ d) 对于 J 类指令在 ID 阶段判断，并取消 IF 阶段指令。
 
 
 
-### 数据冒险 Data Hazard
+### 数据冒险
 
 数据冒险是指不同指令的操作数存在依赖关系造成的冒险，指令所需要的数据依赖其他指令的结果。通常采用数据转发（Forwarding）来解决数据冒险，可能还需要对流水线进行阻塞（Stall）。
 
@@ -274,11 +282,9 @@ sub $t3, $t1, $t3 # Inst 3
 用 Verilog 语言描述为：
 
 ```verilog
-    // load-use hazard
-    assign stall_IF_ID =
-           (!ID_MemWrite && EX_MemRead && EX_RegWrAddr != 0 && (EX_RegWrAddr == ID_RegRs || EX_RegWrAddr == ID_RegRt))
-           ||
-           (ID_MemWrite && EX_MemRead && EX_RegWrAddr != 0 && EX_RegWrAddr == ID_RegRs)
+(!ID_MemWrite && EX_MemRead && EX_RegWrAddr != 0 && (EX_RegWrAddr == ID_RegRs || EX_RegWrAddr == ID_RegRt))
+||
+(ID_MemWrite && EX_MemRead && EX_RegWrAddr != 0 && EX_RegWrAddr == ID_RegRs)
 ```
 
 阻塞的这一个周期结束时，load 指令已经得到内存读取数据。阻塞后的第一个周期，load 指令进入 WB 阶段，指令 `Inst 2` 进入 EX 阶段，需要准备好 ALU 操作数，在此时进行转发，转发通路为： `MEM_WB --> EX` ，此情况与“Case 2：从上上条指令转发”类似，转发通路相同，只是转发的数据变为 `WB_MemReadData` 而非 `WB_ALUOut` ，此处需要增加额外的条件判断。修改后，综合考虑 Case 1, Case 2, Case 3 ，完整的的 ALU 输入端转发逻辑用 Verilog 描述为：
@@ -354,11 +360,11 @@ sw $t3, 4($t1) # Inst 2
 
 
 
-### 控制冒险 Control Hazard
+### 控制冒险
 
 取指令的 PC 依赖于其他指令的结果，由分支指令和跳转指令造成。与数据冒险不同的是，流水线发现可能会出错的时候，错误已经发生（已经取出错误的指令），因此除了转发、阻塞以外，还需要进行清除（Flush），清除流水线中错误的指令。
 
-#### 分支指令 Branch Hazard
+#### 分支指令冒险
 
 以 `beq` 为例：
 
@@ -381,7 +387,7 @@ addi $t1, $t1, 1 # Inst 3
 分支执行时清除 IF 级的逻辑为：
 
 ```verilog
-assign flush_IF = (ID_PCSrc == 2'b00 || (ID_PCSrc == 2'b01 && branch_taken == 0)) ? 0 : 1;
+ID_PCSrc == 2'b00 || (ID_PCSrc == 2'b01 && branch_taken == 0)
 ```
 
 
@@ -444,20 +450,13 @@ beq $t1, $t3, label # Inst 2
 用 Verilog 语言描述为：
 
 ```verilog
-    assign stall_IF_ID =
-           (!ID_MemWrite && EX_MemRead && EX_RegWrAddr != 0 && (EX_RegWrAddr == ID_RegRs || EX_RegWrAddr == ID_RegRt)) // load-use, except load-store
-           ||
-           (ID_MemWrite && EX_MemRead && EX_RegWrAddr != 0 && EX_RegWrAddr == ID_RegRs) // sw use the reg that lw writes in for calculating the address
-           ||
-           (
-               ID_PCSrc == 2'b01 // data hazard caused by branch
-               &&
-               (
-                   (EX_RegWrite && EX_RegWrAddr != 0 && (EX_RegWrAddr == ID_RegRs || EX_RegWrAddr == ID_RegRt))
-                   ||
-                   (MEM_MemRead && MEM_RegWrAddr != 0 && (MEM_RegWrAddr == ID_RegRs || MEM_RegWrAddr == ID_RegRt))
-               )
-           ) ? 1 : 0;
+ID_PCSrc == 2'b01 // data hazard caused by branch
+&&
+(
+(EX_RegWrite && EX_RegWrAddr != 0 && (EX_RegWrAddr == ID_RegRs || EX_RegWrAddr == ID_RegRt))
+||
+(MEM_MemRead && MEM_RegWrAddr != 0 && (MEM_RegWrAddr == ID_RegRs || MEM_RegWrAddr == ID_RegRt))
+)
 ```
 
 又例如：
@@ -472,7 +471,7 @@ beq $t1, $t3, label # Inst 2
 
 
 
-#### 跳转指令 Jump Hazard
+#### 跳转指令冒险
 
 跳转指令的目标地址在 ID 阶段计算出来，而此时下一条指令已经进入流水线 IF 阶段，因此一定会造成控制冒险（除非跳转的目标地址就是 PC+4，但这样的跳转没有意义），在软件层面上我们可以在跳转指令后加一条空指令 nop，在本实验中我们从硬件层面上考虑解决。
 
@@ -488,7 +487,7 @@ sub $t3, $t1, $t2 # Inst 3
 对于 `example 13` ，流水线在 ID 阶段译码后才知道是指令 `Inst 1` 为跳转指令，此时下一条指令 `Inst 2` 已经进入 IF 阶段，此时如果我们只是阻塞 IF 级一个周期，并不能阻止指令 `Inst 2` 的执行，因此我们需要清除 IF 阶段的指令 `Inst 2` ，使级间寄存器 `IF_ID` 的内容变为0，在下一周期就可以根据更新好的 PC（跳转地址）取出应该执行的指令 `Inst 3` 。跳转指令清除 IF 级的逻辑为“ID 级的指令为跳转指令”，用 Verilog 语言描述为：
 
 ```verilog
-assign flush_IF = (ID_PCSrc == 2'b10 || ID_PCSrc == 2'b11) ? 1 : 0;
+ID_PCSrc == 2'b10 || ID_PCSrc == 2'b11
 ```
 
 又例如：
@@ -655,7 +654,67 @@ ALU 的第二个操作数，根据控制信号 `EX_ALUSrc2` ，选择数据 `EX_
 
 ### 外设部分
 
-4位八段数码管，传入一个 8 bit 数，低位为 CA，高位为 DP，以此类推。控制4个数码管显示的信号 `tube_select` 。
+最后要使用软件方法，将排序结果依次显示在 FPGA 开发板的4位八段数码管上。我们在数据存储器 `DataMemory.v` 中曾将高位地址 0x40000010 设为数码管专用空间，该地址存储的字中，低8位依次为数码管的 8 个段 `tube_segment[7:0]` ，12-9 位为数码管显示的使能信号 `tube_select[4:0]` 。四个数码管只能显示 4 个 4 bit 数，即一个 16 bit 数，点亮数码管，相当于对数码管对应内存地址进行 store word 操作，只是这个字数据的高 16 位应为0。
+
+首先我们将所有 4 bit 数 0-F 与八段数码管点亮之间的映射关系，提前存储在数据存储器的一片空闲区域内，以便我们能够根据得到的 4 bit 数直接在内存中取出它所对应的八段数码管显示模式。我选取的这一片内存的首地址为 400。
+
+![4bit_tube](.\4bit_tube.png)
+
+```assembly
+    li $t0, 400 # first address to store BCD display
+    li $t1, 0x3f # 0: 0x3f
+    sw $t1, 0($t0)
+    li $t1, 0x06 # 1: 0x06
+    sw $t1, 4($t0)
+    ...
+    li $t1, 0x79 # E: 0x79
+    sw $t1, 56($t0)
+    li $t1, 0x71 # F: 0x71
+    sw $t1, 60($t0)
+```
+
+显示一个 16 bit 数时，使用动态扫描的方法，每一次只用一个数码管显示一个 4 bit 数，然后循环点亮每一个数码管。将 16 bit 数的 4 个 4 bit 数取出，需要使用“逻辑与+移位”的方法：
+
+```assembly
+        # t1 is the 16 bit data to display
+        andi $s3, $t1, 0xf000
+        srl $s3, $s3, 12 # s3=data[15:12]
+        # find tube display mode in DataMemory
+        sll $s3, $s3, 2
+        add $s3, $s1, $s3 # s1=400
+        lw $s3, 0($s3)
+        addi $s3, $s3, 0x800 # s3={4'b1000, tube_segment[7:0]}
+```
+
+每个数据持续显示 1s，我设定扫描频率为 1KHz，也即每个数据在 4 个数码管上循环显示 1000 次，每次持续 1ms，4 个数码管各显示 0.25 ms 。流水线 CPU 使用的是系统时钟分频出的 50MHz 时钟，指令执行周期为 20ns。忽略 store 指令的执行时间，我们需要在每一个数码管完成点亮之后（store 写入内存完成）循环执行 $0.25\text{ms}/20\text{ns}=12500$ 个空指令，因此有如下代码：
+
+```assembly
+    # t2=100
+    # s2=4000_0010
+    select_begin:
+        li $t3, 2500 # 12500/5=2500
+    loop1:
+        sw $s3, 0($s2) # s3={4'b1000, tube_segment[7:0]}
+        nop1:
+            addi $t3, $t3, -1
+            nop
+            nop
+            bnez $t3, nop1
+        ...
+        li $t3, 2500
+    loop4:
+        sw $s6, 0($s2) # s6={4'b0001, tube_segment[7:0]}
+        nop4:
+            addi $t3, $t3, -1
+            nop
+            nop
+            bnez $t3, nop4
+
+        addi $t2, $t2, -1
+        bnez $t2, select_begin # if times<0, break
+```
+
+考虑到每一个循环中有 `addi` 指令、两个 nop、`bnez` 指令及其之后清除的指令，每一次循环占用了 5 个时钟周期，因此循环计数器 `$t3 = 12500/5 = 2500` ，如此可实现一个数码管持续点亮 0.25ms，四个数码管交替点亮 1ms，在外层循环中的计数器控制下循环 1000 次，实现了每个数据显示 1s。
 
 
 
@@ -663,33 +722,145 @@ ALU 的第二个操作数，根据控制信号 `EX_ALUSrc2` ，选择数据 `EX_
 
 转发单元 `ForwardingUnit.v` ：
 
+```verilog
+// 00: read data from the Register File
+// 01: forward ALUOut from EX_MEM to EX
+// 10: forward ALUOut from MEM_WB to EX
+// 11: forward MemReadData from MEM_WB to EX
+assign ALU_forwardA =
+       (MEM_RegWrite && MEM_RegWrAddr != 0 && EX_RegRs == MEM_RegWrAddr) ? 1 :
+       (WB_MemRead && WB_RegWrAddr != 0 && EX_RegRs == WB_RegWrAddr) ? 3 :
+       (WB_RegWrite && WB_RegWrAddr != 0 && EX_RegRs == WB_RegWrAddr) ? 2 : 0;
 
+assign ALU_forwardB =
+       (MEM_RegWrite && MEM_RegWrAddr != 0 && EX_RegRt == MEM_RegWrAddr) ? 1 :
+       (WB_MemRead && WB_RegWrAddr != 0 && EX_RegRt == WB_RegWrAddr) ? 3 :
+       (WB_RegWrite && WB_RegWrAddr != 0 && EX_RegRt == WB_RegWrAddr) ? 2 : 0;
+
+// 0: read data from the Register File
+// 1: forward MemReadData from MEM_WB to MEM
+assign MEM_forward =
+       (WB_MemRead && MEM_MemWrite && WB_RegWrAddr != 0 && MEM_RegRt == WB_RegWrAddr) ? 1 : 0;
+```
 
 控制冒险检测单元 `HazardUnit.v` ：
 
+```verilog
+    // when to flush IF: jump hazard, branch hazard
+    assign flush_IF = (ID_PCSrc == 2'b00 || (ID_PCSrc == 2'b01 && branch_taken == 0)) ? 0 : 1;
 
+    // when to stall IF and ID: load-use hazard, data hazard caused by branch or jump
+    assign stall_IF_ID =
+           (!ID_MemWrite && EX_MemRead && EX_RegWrAddr != 0 && (EX_RegWrAddr == ID_RegRs || EX_RegWrAddr == ID_RegRt)) // load-use, except load-store
+           ||
+           (ID_MemWrite && EX_MemRead && EX_RegWrAddr != 0 && EX_RegWrAddr == ID_RegRs) // sw use the reg that lw writes in for calculating the address
+           ||
+           (
+               ID_PCSrc == 2'b01 // data hazard caused by branch
+               &&
+               (
+                   (EX_RegWrite && EX_RegWrAddr != 0 && (EX_RegWrAddr == ID_RegRs || EX_RegWrAddr == ID_RegRt))
+                   ||
+                   (MEM_MemRead && MEM_RegWrAddr != 0 && (MEM_RegWrAddr == ID_RegRs || MEM_RegWrAddr == ID_RegRt))
+               )
+           )
+           ||
+           (
+               ID_PCSrc == 2'b11 // data hazad caused by jr or jalr
+               &&
+               (
+                   (EX_RegWrite && EX_RegWrAddr != 0 && EX_RegWrAddr == ID_RegRs)
+                   ||
+                   (MEM_MemRead && MEM_RegWrAddr != 0 && MEM_RegWrAddr == ID_RegRs)
+               )
+           ) ? 1 : 0;
+```
 
 分支和跳转转发单元 `BranchJumpForwarding.v` ：
+
+```verilog
+// 0: no forwarding
+// 1: forward from EX_MEM to ID
+assign Forward1 = (MEM_RegWrite && MEM_RegWrAddr != 0 && ID_RegRs == MEM_RegWrAddr) ? 1 : 0;
+assign Forward2 = (MEM_RegWrite && MEM_RegWrAddr != 0 && ID_RegRt == MEM_RegWrAddr) ? 1 : 0;
+```
+
+PC 的更新与 `stall_IF_ID` 有关，与 `flush_IF` 无关：
+
+```verilog
+    always @(posedge reset or posedge clk)
+        if (reset)
+            IF_PC <= 32'h0;
+        else begin
+            if (stall_IF_ID)
+                IF_PC <= IF_PC;
+            else
+                IF_PC <=
+                      (ID_PCSrc == 2'b01) ? BranchAddr :
+                      (ID_PCSrc == 2'b10) ? JumpAddr :
+                      (ID_PCSrc == 2'b11) ? RegisterAddr : IF_PC + 32'h4;
+        end
+```
+
+级间寄存器 `IF_ID_Reg.v` 更新逻辑：
+
+```verilog
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            ID_PC <= 32'b0;
+            ID_Instruction <= 32'b0;
+        end
+        else begin
+            if (flush_IF && !stall_IF_ID) begin
+                ID_PC <= 32'b0;
+                ID_Instruction <= 32'b0;
+            end
+            else if (stall_IF_ID) begin
+                ID_PC <= ID_PC;
+                ID_Instruction <= ID_Instruction;
+            end
+            else begin
+                ID_PC <= IF_PC;
+                ID_Instruction <= IF_Instruction;
+            end
+        end
+    end
+```
+
+数据存储器的空间划分：
+
+```verilog
+        else if (MemWrite) begin
+            if (Address == 32'h4000_0010) begin
+                tube_select <= Write_data[11:8];
+                tube_segment <= Write_data[7:0];
+            end
+            else if (Address < 32'h4000_0000) begin
+                RAM_data[Address[RAM_SIZE_BIT + 1 : 2]] <= Write_data;
+            end
+        end
+```
+
+寄存器堆的先写后读（内部转发）：
+
+```verilog
+// read data from RF_data as Read_data1 and Read_data2, RAW at the same time
+assign Read_data1 = (Read_register1 == 5'b00000) ? 32'h00000000 :
+    (RegWrite && Write_register != 0 && (Write_register == Read_register1)) ? Write_data : RF_data[Read_register1];
+assign Read_data2 = (Read_register2 == 5'b00000) ? 32'h00000000 :
+    (RegWrite && Write_register != 0 && (Write_register == Read_register2)) ? Write_data : RF_data[Read_register2];
+```
+
+
 
 
 
 ## 调试情况
 
-关于级间寄存器的更新，我刚开始想当然地认为：级间寄存器在复位或者本级清除的情况下置为0，另外在不阻塞的情况下进行更新，于是我写出了下面这样的代码：
+（1）关于级间寄存器的更新，我最开始想当然地认为：级间寄存器在复位或者本级清除的情况下置为0，另外在不阻塞的情况下进行更新，于是对于每个级间寄存器，我都写出了下面这样的代码：
 
 ```verilog
 // ./src/IF_ID_Reg.v
-module IF_ID_Reg(
-        input reset,
-        input clk,
-        input IF_flush,
-        input IF_stall,
-        input [32-1:0] IF_Instruction,
-        input [32-1:0] IF_PC,
-        output reg [32-1:0] ID_Instruction,
-        output reg [32-1:0] ID_PC
-    );
-
     always @(posedge clk or posedge reset) begin
         if (reset || IF_flush) begin
             ID_Instruction <= 32'b0;
@@ -700,8 +871,6 @@ module IF_ID_Reg(
             ID_PC <= IF_PC;
         end
     end
-
-endmodule // IF_ID_Reg
 ```
 
 但是进行仿真的时候我遇到了一个这样的问题：运行单周期处理器大作业时的指令时，出现了 `stall` 信号拉高后，经过一个周期后没有变回0，而是一直保持为高，而且之后每次取的指令都是其中一个分支指令之后的第一条指令。我仔细检查了仿真波形，发现第一个原因：
@@ -712,95 +881,42 @@ endmodule // IF_ID_Reg
 assign BranchAddr = ID_PC + 32'h0000_0004 + (branch_taken ? {ID_ExtImm[29:0], 2'b00} : 32'h0000_0004);
 ```
 
-解决这个问题后， `stall` 信号仍一直为高无法复原，于是找出第二个原因在于级间寄存器的更新逻辑。下面我们考虑流水线阻塞和清除的本质：阻塞是保持该指令及其前级指令，使它们在下一个周期内在同一级重复上一周期的行为，在该指令的下一级产生全零信号来替代它，等价于在该指令之前“凭空插入”一个空指令 nop ；清除是使得该指令及其前级指令在下一周期进入下一级的时候全部被强制变为0，等价于将该指令变为空指令，消除了它们的影响，从而阻止了它们在流水线中继续执行。
+（2）解决上面的问题后， `stall` 信号仍一直为高无法复原，于是我找出第二个原因在于级间寄存器的更新逻辑。下面我们考虑流水线阻塞和清除的本质：阻塞是保持该指令及其前级指令，使它们在下一个周期内在同一级重复上一周期的行为，在该指令的下一级产生全零信号来替代它，等价于在该指令前面“凭空插入”一个空指令 nop ；清除是使得该指令及其前级指令在下一周期进入下一级的时候全部被强制变为0，等价于将该指令变为空指令，消除了它们的影响，从而阻止了它们在流水线中继续执行。
 
-修改后的逻辑为：
+我们考虑下面这样一个比较“极端”的情况：
 
-```verilog
-// CPU.v
-    assign IF_PC_next =
-           (ID_PCSrc == 2'b01) ? BranchAddr :
-           (ID_PCSrc == 2'b10) ? JumpAddr :
-           (ID_PCSrc == 2'b11) ? RegisterAddr :
-           IF_PC_plus_4;
+```assembly
+lw $t1, 0($t2)
+beq $t1, $a1, label
+...
+label: ...
 ```
 
-```verilog
-// IF_ID_Reg.v
-    always @(posedge clk or posedge reset) begin
-        if (reset) begin
-            ID_Instruction <= 32'b0;
-            ID_PC <= 32'b0;
-        end
-        else if (flush_IF) begin
-            ID_Instruction <= 32'b0;
-            ID_PC <= 32'b0;
-        end
-        else if (stall_IF_ID) begin
-            ID_Instruction <= ID_Instruction;
-            ID_PC <= ID_PC;
-        end
-        else begin
-            ID_Instruction <= IF_Instruction;
-            ID_PC <= IF_PC;
-        end
-    end
-```
+它出现了多种冒险：load-use、分支提前判断引发的冒险、控制冒险。`beq` 需要阻塞两个周期，并且在分支执行后还需要清除 IF。在此期间阻塞和清除信号均为高，这时下一个周期的各级信号更新情况就比较复杂，我最开始只是考虑单独在阻塞和清除的作用下的更新逻辑，而忽略了两者同时作用。修改后的逻辑见“解决冒险的方法总结” 。
 
-```verilog
- always @(posedge reset or posedge clk) begin
-        if (reset || stall_IF_ID) begin
-            EX_PC <= 32'b0;
-            EX_RegWrite <= 1'b0;
-            EX_MemRead <= 1'b0;
-            EX_MemWrite <= 1'b0;
-            EX_MemtoReg <= 2'b0;
-            EX_ALUSrc1 <= 1'b0;
-            EX_ALUSrc2 <= 1'b0;
-            EX_ALUOp <= 4'b0;
-            EX_ExtImm <= 32'b0;
-            EX_RegReadDataA <= 32'b0;
-            EX_RegReadDataB <= 32'b0;
-            EX_RegRs <= 5'b0;
-            EX_RegRt <= 5'b0;
-            EX_RegWrAddr <= 5'b0;
-        end
-        else begin
-            EX_PC <= ID_PC;
-            EX_RegWrite <= ID_RegWrite;
-            EX_MemRead <= ID_MemRead;
-            EX_MemWrite <= ID_MemWrite;
-            EX_MemtoReg <= ID_MemtoReg;
-            EX_ALUSrc1 <= ID_ALUSrc1;
-            EX_ALUSrc2 <= ID_ALUSrc2;
-            EX_ALUOp <= ID_ALUOp;
-            EX_ExtImm <= ID_ExtImm;
-            EX_RegReadDataA <= ID_RegReadDataA;
-            EX_RegReadDataB <= ID_RegReadDataB;
-            EX_RegRs <= ID_RegRs;
-            EX_RegRt <= ID_RegRt;
-            EX_RegWrAddr <= ID_RegWrAddr;
-        end
-    end
-```
+（3）完成代码之后准备上板子进行验证，我最开始写的汇编代码中，点亮数码管的方式是这样的：每次 store 指令执行后仅仅将计数器递减和进行分支判断，然后就执行下一个 store 指令，也就是每次点亮一个数码管之后立刻点亮下一个。这样数码管仅仅点亮了 5 个时钟周期=100ns，扫描频率高达 2.5MHz，频率太快导致数码管过亮，难以区分显示的数字。后来我查阅资料得知扫描频率不宜过快或过慢，过快会难以辨认，过慢则会闪烁。因此我参照《实验二：反应速度测试仪》将扫描频率降低到 1KHz，在每个 store 指令后加入大量的空指令，最终在板子上显示效果较好。
+
+
 
 
 
 ## 仿真结果
 
+输入文件 `a.in` 中的内容是：
 
+![a_in](.\a_in.png)
 
-## FPGA 运行结果
+理论上排序后的输出文件 `a.out` 为：
 
+![a_out](.\a_out.png)
 
+0-100ns 排序前的内存，（十进制显示），第一个数20为排序数据个数，从低到高依次为待排序数据：
 
-## 性能分析
+![sim_before_sort](.\sim_before_sort.png)
 
-### 静态时序分析
+排序后的内存（十进制显示），可见插入排序过程，其中地址 0 处存储的值为排序比较次数 0x67=103，排序后的数据从低到高依次增大排列：
 
-
-
-### 资源使用情况
+![sim_after_sort](.\sim_after_sort.png)
 
 
 
@@ -808,15 +924,132 @@ assign BranchAddr = ID_PC + 32'h0000_0004 + (branch_taken ? {ID_ExtImm[29:0], 2'
 
 ## CPI 计算
 
+在 MARS 仿真器中运行文件 `insert_sort.asm` ，得到指令数如下：
+
+![inst_counter](.\inst_counter.png)
+
+![inst_statistics](.\inst_statistics.png)
+
+## FPGA 运行结果
+
+显示第一个数——比较次数：
+
+![tube0067](.\tube0067.jpg)
+
+显示排序后的第一个数据——最小的数据 0x044E ：
+
+![tube044E](.\tube044E.jpg)
+
+显示排序后的最后一个数据——最大的数据 0xDBE3 ：
+
+![tubeDBE3](.\tubeDBE3.jpg)
 
 
-## 总结
 
-思考：这样的结构为什么能变成流水线？
 
-为什么采取分支提前判断？因为可以和跳转指令统一。
+
+## 性能分析
+
+### 静态时序分析
+
+![impl_timing](.\impl_timing.png)
+
+### 资源使用情况
+
+![impl_utilization1](.\impl_utilization1.png)
+
+![impl_utilization2](.\impl_utilization2.png)
+
+
+
+## 实验总结
+
+实验的最开始，我就在思考：单周期处理器的结构如何才能变成流水线处理器？单周期在时钟周期内完成一条指令的所有操作，而流水线处理器在一个时钟周期内要使用不同模块完成多个指令的操作。后来我想明白，流水线的核心就是级间寄存器，与单周期相比，级间寄存器实现了指令和控制信号在时间和空间上的分离：同一条指令所对应的信号，在不同周期内有不同名称。流水线中同时存在着五个阶段的信号，他们通过前缀和信号名称区分，这是我对变量命名的考虑——以 `EX_RegWrAddr` 为例，前缀表示这个信号在哪一个模块中被使用，后边的名称 `RegWrAddr` 表示它是一个写入寄存器的编号，而 `MEM_RegWrAddr` 就表示它的上一条指令的写入寄存器编号。等到下一个周期，所有这些信号会通过级间寄存器传递到另一个变量，“改变前缀”，从而在下一个周期为下一个模块所使用，这就实现了“流水”——信号以级间寄存器为起点和终点不断流动。
+
+本实验还给我带来的一个启示是：在开始正式写代码之前，一定要先厘清流水线的结构，要有一个整体的框架、每个阶段和每个模块都需要使用什么信号。我就是前期先开始写这份实验报告，详细分析流水线各阶段的行为、需要添加的控制信号、级间寄存器传递哪些信号、解决冒险的逻辑，此时我思考的层面是在流水线的硬件结构上。又了框架之后，在此基础上写代码效率就比较高。在写代码时我思考的层面是在 Verilog 语言抽象描述硬件的层面上，与之前思考的角度不同，因此可能有一些细节之前没有考虑到，或者实际电路结构和硬件描述语言没有很好的对应，此时我再进行一些细调和修改，最后写出来的程序基本上实现了“一次跑通”。
+
+在本实验中，我实现了分支指令在 ID 阶段提前进行判断，一方面是考虑到可以减少控制冒险发生时阻塞的周期数，减少运行的周期数从而提高 CPI，另一方面是由于跳转指令 `jr,jalr` 本身就在 ID 阶段读取寄存器计算跳转地址，仅仅转发到 EX 级无法解决问题，需要考虑新的数据冒险类型。如果将分支提前到 ID 阶段判断，就可以使分支指令和跳转指令可以共用一套阻塞、 转发和清除逻辑，更具有统一性。当数据需要转发到 ID 阶段时，用于分支判断的两个寄存器数据中的第一个，也作为跳转至寄存器指令需要读取的数据可以直接复用。另外，提前分支判断也造成了额外的比较单元、控制信号等电路，可能会延长 ID 阶段的关键路径而影响最高时钟频率。
+
+要善于利用仿真。Vivado 提供的仿真波形对 debug 较为友好，我遇到问题时，常常先找出是哪一条指令结果出现了错误，如果是这条指令本身的执行没有问题，而是获取了错误的数据导致结果出错，那么就继续向前追溯最早产生错误数据的指令，如果是这条指令本身的问题，那么就观察控制信号、阻塞清除等是否正确。对于测试用的排序算法， 我曾经遇到一个这样的问题：内存地址0处原本为排序数据个数20，但是经过一段时间后内存几个地址处数据全变成了20，于是我在汇编代码中找到所有 store 指令，发现是 load-store 转发的问题，我原本在冒险检测单元中考虑到这种情况，它不需要阻塞 store 指令，只需要转发到 MEM 阶段，但是它满足 load-use 阻塞的条件，因此要在 load-use 阻塞逻辑中排除掉这种情况。
+
+最后，我独立完成了实验内容，除了参考和复用单周期处理器大作业中 `DataMemory.v, InstructionMemory.v, ALU.v, ALUControl.v, RegisterFile.v` 以外，其他的转发、控制冒险、分支判断转发、级间寄存器等均为自己完成，然后完全重写顶层文件 `CPU.v` ，最后手动将数码管显示翻译为汇编语言。流水线大作业是对理论课知识和实验课硬件编程的一次高强度考验，虽然我耗时许久，但最终找出所有 bug 并成功显示正确结果，丰富了我的硬件开发和调试经验，较有收获感。
+
+
 
 ## 文件清单
+
+```
+|-- assembly
+|   |                               `-- Mars4_5.jar
+|   |                               `-- a.in
+|   |                               `-- a.out
+|   |                               `-- convert.txt
+|   |                               `-- default.txt
+|   |                               `-- insert_sort.asm
+|   |                               `-- insert_sort.cpp
+|   |                               `-- instruction_convert.py
+|   |                               `-- mem_data.txt
+|                                   `-- test.asm
+|-- docs
+|   |                               `-- Introduction to the MIPS32 Architecture.pdf
+|   |                               `-- MIPS Calling Conventions Summary.pdf
+|   |                               `-- MIPS32 Instruction Set Manual.pdf
+|   |                               `-- \241\2762024\317\304\241\277\312\375\302\337\312\265\321\351\327\333\272\317\312\265\321\351\326\270\265\274\312\351.pdf
+|   |                               `-- \265\245\326\334\306\332\264\246\300\355\306\367\264\363\327\367\322\265_2024.pdf
+|                                   `-- \265\245\326\334\306\332\312\375\276\335\315\250\302\267.pptx
+|-- prj
+|   |                               `-- simulation
+|   |                               `-- icarus
+|   |                               `-- out.vvp
+|   `-- xilinx
+|-- report
+|   |-- 4bit_tube.png
+|   |-- a_in.png
+|   |-- a_out.png
+|   |-- impl_timing.png
+|   |-- impl_utilization1.png
+|   |-- impl_utilization2.png
+|   |-- inst_counter.png
+|   |-- inst_statistics.png
+|   |-- memory_space.png
+|   |-- pipeline_stages.png
+|   |-- report.md
+|   |-- report.pdf
+|   |-- sim_after_sort.png
+|   |-- sim_before_sort.png
+|   |-- sim_flush.png
+|   |-- sim_sort_end.png
+|   |-- tube0067.jpg
+|   |-- tube044E.jpg
+|   `-- tubeDBE3.jpg
+`-- user
+    |-- data
+    |   `-- top.xdc
+    |-- sim
+    |   `-- testbench.v
+    `-- src
+        |-- ALU.v
+        |-- ALUControl.v
+        |-- BranchJumpForwarding.v
+        |-- BranchResolve.v
+        |-- CPU.v
+        |-- Control.v
+        |-- DataMemory.v
+        |-- EX_MEM_Reg.v
+        |-- ForwardingUnit.v
+        |-- GenerateCLK.v
+        |-- HazardUnit.v
+        |-- ID_EX_Reg.v
+        |-- IF_ID_Reg.v
+        |-- InstructionMemory.v
+        |-- MEM_WB_Reg.v
+        |-- PC.v
+        `-- RegisterFile.v
+```
+
+
+
+
 
 
 
