@@ -19,7 +19,7 @@
 
 module CPU (
         input reset,
-        input clk,
+        input sysclk,
         // input [32-1:0] Device_Read_Data,
         // output MemRead,
         // output MemWrite,
@@ -29,12 +29,12 @@ module CPU (
         output [7:0] tube_segment
     );
 
-    // wire clk;
-    // GenerateCLK u_GenerateCLK(
-    //                 .sysclk(sysclk),
-    //                 .reset(reset),
-    //                 .clk(clk)
-    //             );
+    wire clk;
+    GenerateCLK u_GenerateCLK(
+                    .sysclk(sysclk),
+                    .reset(reset),
+                    .clk(clk)
+                );
 
     // all stage registers begin
     wire flush_IF;

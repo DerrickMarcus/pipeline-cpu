@@ -1,12 +1,11 @@
 # ./data/top.xdc
 
 # create_clock -name clk -period 20.000 [get_ports clk]
-create_clock -period 20.000 -name CLK -waveform {0.000 10.000} [get_ports clk]
+# create_clock -period 20.000 -name CLK -waveform {0.000 10.000} [get_ports clk]
 
+create_clock -period 10.000 -name CLK -waveform {0.000 5.000} [get_ports sysclk]
 
-# create_clock -period 10.000 -name CLK -waveform {0.000 5.000} [get_ports clk]
-
-set_property -dict {PACKAGE_PIN R4 IOSTANDARD LVCMOS33} [get_ports clk]
+set_property -dict {PACKAGE_PIN R4 IOSTANDARD LVCMOS33} [get_ports sysclk]
 set_property -dict {PACKAGE_PIN B22 IOSTANDARD LVCMOS33} [get_ports reset]
 
 # LED=tube_segment

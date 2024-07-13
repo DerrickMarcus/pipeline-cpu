@@ -134,70 +134,86 @@ BCD:
 
 
 display_ready:
+    # display frequency=1KHz, T=1ms, every tube 0.25ms
+    # pipeline clk=20ns, every tube display 12500 T
     # a0=N, total numbers to display
     li $s0, 0 # s0=0, address of buffer
     li $s1, 400 # s1=400, address of BCD display
     li $s2, 0x40000010 # s2=0x40000010, address of BCD7
     li $t0, 0 # t0=index of number to display, initialised as 0
-    li $t1, 0x989680 # t1: total times that each 4-bit number displays in 1s
 
 display_loop:
     bgt $t0, $a0, display_end # if index>N, break
-    sll $t2, $t0, 2
-    add $t2, $s0, $t2 # t2=address of buffer[index]
-    lw $t2, 0($t2) # t2=buffer[index], number to display
-    li $t3, 0 # t3=times of 4-bit number already displayed, initialised as 0
+    sll $t1, $t0, 2
+    add $t1, $s0, $t1 # t1=address of buffer[index]
+    lw $t1, 0($t1) # t1=buffer[index], number to display
+    li $t2, 1000 # 1KHz, 1000 times in 1s
 
-    select_begin:
-        andi $s3, $t2, 0xf000 # s3=data[15:12]
+    select_ready:
+        andi $s3, $t1, 0xf000 # s3=data[15:12]
         srl $s3, $s3, 12
         sll $s3, $s3, 2
         add $s3, $s1, $s3
         lw $s3, 0($s3)
         addi $s3, $s3, 0x800 # s3=tube[11:0]
 
-        andi $s4, $t2, 0xf00 # s4=data[11:8]
+        andi $s4, $t1, 0xf00 # s4=data[11:8]
         srl $s4, $s4, 8
         sll $s4, $s4, 2
         add $s4, $s1, $s4
         lw $s4, 0($s4)
         addi $s4, $s4, 0x400 # s4=tube[11:0]
 
-        andi $s5, $t2, 0xf0 # s5=data[7:4]
+        andi $s5, $t1, 0xf0 # s5=data[7:4]
         srl $s5, $s5, 4
         sll $s5, $s5, 2
         add $s5, $s1, $s5
         lw $s5, 0($s5)
         addi $s5, $s5, 0x200 # s5=tube[11:0]
 
-        andi $s6, $t2, 0xf # s6=data[3:0]
+        andi $s6, $t1, 0xf # s6=data[3:0]
         sll $s6, $s6, 2
         add $s6, $s1, $s6
         lw $s6, 0($s6)
         addi $s6, $s6, 0x100 # s6=tube[11:0]
 
-    select_1:
+    select_begin:
+        li $t3, 2500 # 12500/5=2500
+    loop1:
         sw $s3, 0($s2)
-        addi $t3, $t3, 1
-        nop
-        nop
-        nop
-    select_2:
+        nop1:
+            addi $t3, $t3, -1
+            nop
+            nop
+            bnez $t3, nop1
+        li $t3, 2500
+    loop2:
         sw $s4, 0($s2)
-        addi $t3, $t3, 1
-        nop
-        nop
-        nop
-    select_3:
+        nop2:
+            addi $t3, $t3, -1
+            nop
+            nop
+            bnez $t3, nop2
+        li $t3, 2500
+    loop3:
         sw $s5, 0($s2)
-        addi $t3, $t3, 1
-        nop
-        nop
-        nop
-    select_4:
+        nop3:
+            addi $t3, $t3, -1
+            nop
+            nop
+            bnez $t3, nop3
+        li $t3, 2500
+    loop4:
         sw $s6, 0($s2)
-        addi $t3, $t3, 1
-        ble $t3, $t1, select_1 # if times>=t1, break
+        nop4:
+            addi $t3, $t3, -1
+            nop
+            nop
+            bnez $t3, nop4
+
+        addi $t2, $t2, -1
+        bnez $t2, select_begin # if times<0, break
+
     over_1s:
     addi $t0, $t0, 1 # index++
     j display_loop # next loop
@@ -206,6 +222,6 @@ display_end:
     j exit
 
 exit:
-    j exit
+    j display_ready
 
 # ************************************************************

@@ -14,7 +14,7 @@ module testbench();
 
     CPU u_CPU(
             .reset(reset),
-            .clk(clk),
+            .sysclk(clk),
             // .MemBus_Address(MemBus_Address),
             // .Device_Read_Data(Device_Read_Data),
             // .MemBus_Write_Data(MemBus_Write_Data),
@@ -27,9 +27,9 @@ module testbench();
     initial begin
         reset = 1;
         clk = 1;
-        #100 reset = 0;
+        #10 reset = 0;
     end
 
-    always #50 clk = ~clk; // T=100ns, f=10MHz
+    always #5 clk = ~clk; // T=10ns, f=100MHz
 
 endmodule
