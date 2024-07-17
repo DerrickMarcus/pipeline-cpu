@@ -35,7 +35,7 @@ end:
     sw $s0, 0($t0) # buffer[0]=compare_count
 
     la $a0, output_file # load addres of .out file to a0
-    li $a1, 1 # write，flag = 1
+    li $a1, 1 # write, flag = 1
     li $a2, 0 # mode is ignored
     li $v0, 13 # open a.out
     syscall
