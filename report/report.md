@@ -1009,33 +1009,38 @@ $$
 ## 文件清单
 
 ```
+.
+|-- README.md
 |-- assembly
-|   |                               `-- Mars4_5.jar
-|   |                               `-- a.in
-|   |                               `-- a.out
-|   |                               `-- convert.txt
-|   |                               `-- default.txt
-|   |                               `-- insert_sort.asm
-|   |                               `-- insert_sort.cpp
-|   |                               `-- instruction_convert.py
-|   |                               `-- mem_data.txt
-|                                   `-- test.asm
+|   |-- Mars4_5.jar
+|   |-- a.in
+|   |-- a.out
+|   |-- convert.txt
+|   |-- default.txt
+|   |-- insert_sort.asm
+|   |-- insert_sort.cpp
+|   |-- instruction_convert.py
+|   |-- mem_data.txt
+|   `-- test.asm
 |-- docs
-|   |                               `-- Introduction to the MIPS32 Architecture.pdf
-|   |                               `-- MIPS Calling Conventions Summary.pdf
-|   |                               `-- MIPS32 Instruction Set Manual.pdf
-|   |                               `-- \241\2762024\317\304\241\277\312\375\302\337\312\265\321\351\327\333\272\317\312\265\321\351\326\270\265\274\312\351.pdf
-|   |                               `-- \265\245\326\334\306\332\264\246\300\355\306\367\264\363\327\367\322\265_2024.pdf
-|                                   `-- \265\245\326\334\306\332\312\375\276\335\315\250\302\267.pptx
+|   |-- Introduction to the MIPS32 Architecture.pdf
+|   |-- MIPS Calling Conventions Summary.pdf
+|   |-- MIPS32 Instruction Set Manual.pdf
+|   |-- pipelineCPU_requirements.pdf
+|   |-- singlecycleCPU_2024.pdf
+|   `-- singlecycle_datapath.pptx
 |-- prj
-|   |                               `-- simulation
-|   |                               `-- icarus
-|   |                               `-- out.vvp
+|   |-- simulation
+|   |   `-- icarus
+|   |       `-- out.vvp
 |   `-- xilinx
 |-- report
 |   |-- 4bit_tube.png
 |   |-- a_in.png
 |   |-- a_out.png
+|   |-- imp_timing.png
+|   |-- imp_uzi1.png
+|   |-- imp_uzi2.png
 |   |-- impl_timing.png
 |   |-- impl_utilization1.png
 |   |-- impl_utilization2.png
@@ -1049,6 +1054,7 @@ $$
 |   |-- sim_before_sort.png
 |   |-- sim_flush.png
 |   |-- sim_sort_end.png
+|   |-- syn_timing.png
 |   |-- tube0067.jpg
 |   |-- tube044E.jpg
 |   `-- tubeDBE3.jpg
@@ -1076,8 +1082,6 @@ $$
         |-- PC.v
         `-- RegisterFile.v
 ```
-
-
 
 
 
