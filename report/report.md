@@ -49,13 +49,19 @@ d) 对于 J 类指令在 ID 阶段判断，并取消 IF 阶段指令。
 
 ## 三、实验设计
 
-本实验 MIPS 5 级流水线处理器执行指令可以分为五个阶段，每个阶段都为一个时钟周期：
+流水线的整体框图为：
 
-1. IF，instruction fetch，取指令阶段。处理器在 PC 所指向的指令存储单元处，取出指令传输到处理器中。
-2. ID，instruction decode，指令译码阶段。译码单元根据指令类型进行分析，生成相应的控制信号（寄存器地址，立即数、多路选择器信号等）。寄存器接收到访问地址后将寄存器中数据传输到数据线上。
-3. EX，execution，操作执行阶段。算术逻辑单元 ALU 根据上一阶段读取的寄存器值和决定运算类型的控制信号进行计算，输出计算结果。
-4. MEM，memory access，内存访问阶段。根据控制信号，将数据写入内存或从内存中读取数据。
-5. WB，write back to register，写回寄存器阶段。将数据写回寄存器，数据来源可能是 EX 阶段 ALU 的运算结果，也可能是 MEM 阶段内存读取结果，也可能是跳转指令要保存的 PC 值。
+![frame](.\frame.png)
+
+
+
+五级流水线执行指令可以分为五个阶段，每个阶段都为一个时钟周期：
+
+1. IF，instruction fetch，取指令。在 PC 所指向的指令存储单元处，取出指令传输到处理器中。
+2. ID，instruction decode，指令译码。译码单元根据指令类型进行分析，生成相应的控制信号（寄存器地址，立即数、多路选择器信号等）。寄存器接收到访问地址后将寄存器中数据传输到数据线上。
+3. EX，execution，操作执行。算术逻辑单元 ALU 根据上一阶段读取的寄存器值和决定运算类型的控制信号进行计算，输出计算结果。
+4. MEM，memory access，内存访问。将数据写入内存或从内存中读取数据。
+5. WB，write back to register，写回寄存器。将数据写回寄存器堆。
 
 ![流水线各阶段行为](.\pipeline_stages.png)
 
@@ -78,8 +84,6 @@ d) 对于 J 类指令在 ID 阶段判断，并取消 IF 阶段指令。
 4. 跳转指令： `j, jal, jr, jalr` 。
 
 5. 空指令 nop，即 `sll, $0, $0, 0` 。
-
-说明：伪指令 `blt, bgt, ble, bge, li, move` 并不是 MIPS32 直接支持的指令集，而是为了方便程序员编程、增强可读性而使用的伪指令，在汇编器对代码进行汇编时会自动转换为 `addi` 等基本指令组成的指令，是软件层面的操作，因此本实验不支持这些伪指令。
 
 
 
@@ -135,48 +139,12 @@ d) 对于 J 类指令在 ID 阶段判断，并取消 IF 阶段指令。
 
 级间寄存器中存储各类控制信号和数据，并随着流水线向前移动。5级流水线有4个级间寄存器： `IF_ID, ID_EX, EX_MEM, MEM_WB` 。
 
-在每一个周期的时钟上升沿进行进行级间寄存器的刷新，刷新后的值有三种情况：
-
-1. 来自上一个级间寄存器的内容，即正常的流水线前进。
-2. 保持本级间寄存器的内容，即阻塞一个周期。
-3. 全部为0，即清除流水线。
-
 处理器执行指令各个阶段需要使用到的控制信号：
 
 - ID：`PCSrc, RegDst, ExtOp, LuOp`  。
 - EX：`ALUOp, ALUSrc1, ALUSrc2` 。
 - MEM：`MemRead, MemWrite` 。
 - WB：`MemtoReg, RegWrite` 。
-
-因此得到各个级间寄存器保存的控制信号以及其他数据：
-
-1. `IF_ID` ： 
-
-   `Instruction, PC, flush, stall` 。
-
-2. `ID_EX` ： 
-
-   `PC, flush, stall` ；
-
-   控制信号 `RegWrite, MemRead, MemWrite, MemtoReg, ALUSrc1, ALUSrc2, ALUOp` ；
-
-   数据 `ExtImm, RegReadDataA, RegReadDataB, RegRs, RegRt, RegWrAddr` 。
-
-3. `EX_MEM` ：
-
-   `PC, flush, stall` ；
-
-   控制信号 `RegWrite, MemRead, MemWrite, MemtoReg` ；
-
-   数据 `RegWrAddr, RegRtData, RegRt, ALUOut` 。
-
-4. `MEM_WB` ：
-
-   `PC, flush, stall` ；
-
-   控制信号 `RegWrite, MemRead, MemtoReg` ；
-
-   数据 `RegWrAddr, ALUOut, MemReadData` 。
 
 注：为了区分流水线在不同阶段、不同模块使用的信号与数据，同一个信号在不同阶段有不同的变量名称，例如写入寄存器控制信号 `RegWrite` ，在 ID、EX、MEM、WB 四个阶段分别为： ` ID_RegWrite, EX_RegWrite, MEM_RegWrite, WB_RegWrite` ，同一个周期内不同的模块使用对应的控制信号进行操作，例如 WB 阶段使用 `WB_RegWrite` 进行寄存器堆写入操作；而同一个指令的控制信号在不同周期内是不同的变量，这样可以随着时钟沿由上一级寄存器传递到下一级寄存器。
 
@@ -718,7 +686,7 @@ ALU 的第二个操作数，根据控制信号 `EX_ALUSrc2` ，选择数据 `EX_
 
 
 
-## 关键代码
+## 四、关键代码
 
 转发单元 `ForwardingUnit.v` ：
 
@@ -855,7 +823,7 @@ assign Read_data2 = (Read_register2 == 5'b00000) ? 32'h00000000 :
 
 
 
-## 调试情况
+## 五、调试情况
 
 （1）关于级间寄存器的更新，我最开始想当然地认为：级间寄存器在复位或者本级清除的情况下置为0，另外在不阻塞的情况下进行更新，于是对于每个级间寄存器，我都写出了下面这样的代码：
 
@@ -900,7 +868,7 @@ label: ...
 
 
 
-## 仿真结果
+## 六、仿真结果
 
 输入文件 `a.in` 中的内容是：
 
@@ -922,7 +890,7 @@ label: ...
 
 
 
-## CPI 计算
+## 七、CPI 计算
 
 在 MARS 仿真器中运行文件 `insert_sort.asm` ，得到指令数为 2221：
 
@@ -948,7 +916,7 @@ $$
 
 
 
-## FPGA 运行结果
+## 八、FPGA 运行结果
 
 显示第一个数——比较次数：
 
@@ -966,7 +934,7 @@ $$
 
 
 
-## 性能分析
+## 九、性能分析
 
 ### 静态时序分析
 
@@ -992,7 +960,7 @@ $$
 
 
 
-## 实验总结
+## 十、实验总结
 
 实验的最开始，我就在思考：单周期处理器的结构如何才能变成流水线处理器？单周期在时钟周期内完成一条指令的所有操作，而流水线处理器在一个时钟周期内要使用不同模块完成多个指令的操作。后来我想明白，流水线的核心就是级间寄存器，与单周期相比，级间寄存器实现了指令和控制信号在时间和空间上的分离：同一条指令所对应的信号，在不同周期内有不同名称。流水线中同时存在着五个阶段的信号，他们通过前缀和信号名称区分，这是我对变量命名的考虑——以 `EX_RegWrAddr` 为例，前缀表示这个信号在哪一个模块中被使用，后边的名称 `RegWrAddr` 表示它是一个写入寄存器的编号，而 `MEM_RegWrAddr` 就表示它的上一条指令的写入寄存器编号。等到下一个周期，所有这些信号会通过级间寄存器传递到另一个变量，“改变前缀”，从而在下一个周期为下一个模块所使用，这就实现了“流水”——信号以级间寄存器为起点和终点不断流动。
 
@@ -1006,10 +974,11 @@ $$
 
 
 
-## 文件清单
+## 附录、文件清单
 
 ```
 .
+|-- LICENSE
 |-- README.md
 |-- assembly
 |   |-- Mars4_5.jar
@@ -1023,10 +992,11 @@ $$
 |   |-- mem_data.txt
 |   `-- test.asm
 |-- docs
-|   |-- Introduction to the MIPS32 Architecture.pdf
-|   |-- MIPS Calling Conventions Summary.pdf
-|   |-- MIPS32 Instruction Set Manual.pdf
-|   |-- pipelineCPU_requirements.pdf
+|   |-- reference
+|   |   |-- Introduction to the MIPS32 Architecture.pdf
+|   |   |-- MIPS Calling Conventions Summary.pdf
+|   |   `-- MIPS32 Instruction Set Manual.pdf
+|   |-- requirements.pdf
 |   |-- singlecycleCPU_2024.pdf
 |   `-- singlecycle_datapath.pptx
 |-- prj
@@ -1038,6 +1008,7 @@ $$
 |   |-- 4bit_tube.png
 |   |-- a_in.png
 |   |-- a_out.png
+|   |-- frame.png
 |   |-- imp_timing.png
 |   |-- imp_uzi1.png
 |   |-- imp_uzi2.png
@@ -1082,8 +1053,6 @@ $$
         |-- PC.v
         `-- RegisterFile.v
 ```
-
-
 
 
 
